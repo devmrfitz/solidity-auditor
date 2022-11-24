@@ -1,5 +1,5 @@
 {
-  "name": "solidity-auditor",
+  "name": "solidity-auditor-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
