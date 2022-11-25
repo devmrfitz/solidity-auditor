@@ -1,5 +1,4 @@
 const express = require('express');
-const parser = require("@solidity-parser/parser");
 const router = express.Router();
 
 router.post('/upload-code', function(req, res, next) {
@@ -15,6 +14,7 @@ router.post('/upload-code', function(req, res, next) {
   let matchingLines = 0;
 
   let matches = [];
+  let needToBeManuallyAudited = [];
 
 
 
@@ -50,24 +50,12 @@ router.post('/upload-code', function(req, res, next) {
           function: hashFiles[hash][3],
         });
       }
+      else {
+        notMatchingLines += (end - start + 1);
+        needToBeManuallyAudited.push(node[2]);
+      }
     })
-
-
-  //   const nodes = JSON.stringify(node_list, null, 2);
-  //   console.log(formattedCode.split('\n'));
-  // const filePath = __dirname + '/../tmp/data.json';
-  //
-  //
-  // fs.writeFile(filePath, nodes, function(err) {
-  //   if(err) {
-  //     return console.log(err);
-  //   }
-  //   console.log("The file was saved!");
-  // }
-  //
-  // );
-  // console.log(code);
-  res.json( { matches: matches, matchingLines: matchingLines, totalLines: formattedCode.split('\n').length });
+  res.json( { matches, matchingLines, totalLines: formattedCode.split('\n').length, needToBeManuallyAudited });
 });
 
 

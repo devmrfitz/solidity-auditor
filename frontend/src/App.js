@@ -3,7 +3,9 @@ import {useState, useRef} from "react";
 function App() {
   const [code, setCode] = useState('');
   const [blockExplorerUrl, setBlockExplorerUrl] = useState('');
+  const [resp, setResp] = useState('');
   const fileUploadRef = useRef(null);
+  console.log(resp);
   return (
     <div className="m-5 max-w-7xl mx-auto w-100 grid grid-cols-12 gap-5 ">
       <h1 className="text-5xl mx-auto w-100 text-center my-4 col-span-12">
@@ -78,9 +80,22 @@ function App() {
           </div>
         </div>
       <div className="col-span-8">
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit for audit</button>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                onClick={() => {
+                  fetch('http://localhost:8000/upload-code', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'text/plain'
+                    },
+                    body: code
+                  }).then((response) => response.json())
+                      .then((data) => setResp(data));
+                }}
+        >Submit for audit</button>
       </div>
-
+      <div className={"col-span-12"}>
+        {<pre>{JSON.stringify(resp, null, 2)}</pre>}
+      </div>
     </div>
   );
 }
