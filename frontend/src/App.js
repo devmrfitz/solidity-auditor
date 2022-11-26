@@ -82,7 +82,7 @@ function App() {
       <div className="col-span-8">
         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 onClick={() => {
-                  fetch('http://localhost:8000/upload-code', {
+                  fetch(`${process.env.REACT_APP_BACKEND_URL}/upload-code`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'text/plain'
