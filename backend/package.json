@@ -17,9 +17,11 @@
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
-    "nodegit": "^0.27.0",
     "prettier": "^2.8.0",
     "prettier-plugin-solidity": "^1.0.0",
     "pug": "2.0.0-beta11"
+  },
+  "devDependencies": {
+    "nodegit": "^0.27.0"
   }
 }
