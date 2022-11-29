@@ -17,6 +17,6 @@
     "nodegit": "^0.27.0",
     "prettier": "^2.8.0",
     "prettier-plugin-solidity": "^1.0.0",
-    "pug": "2.0.0-beta11"
+    "pug": "2.0.4"
   }
 }
