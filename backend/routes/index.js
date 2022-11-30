@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const PRICE_PER_LINE = 12;
+
 router.post('/upload-code', function(req, res, next) {
   const code = req.body;
   const prettier = require("prettier");
@@ -29,13 +31,16 @@ router.post('/upload-code', function(req, res, next) {
   const parsing_result = parser.parse(formattedCode, {
       loc: true,
     }).children.filter(child => child.type === 'ContractDefinition');
+  // console.log(JSON.stringify(parsing_result, null, 2));
   const node_list = [];
   parsing_result.forEach(contract => {
     contract.subNodes.forEach(subNode => {
-      if (subNode.type === 'FunctionDefinition') {
-        node_list.push([subNode.loc.start.line-1, subNode.loc.end.line-1, subNode.name]);
+      if ( ['FunctionDefinition', 'ModifierDefinition', 'StructDefinition', 'StateVariableDeclaration'
+      ].includes(subNode.type) ) {
+        node_list.push([subNode.loc.start.line-1, subNode.loc.end.line-1, subNode.name, subNode.type]);
       }
     })});
+
 
 
     node_list.forEach(node => {
@@ -48,7 +53,8 @@ router.post('/upload-code', function(req, res, next) {
         matches.push({
           OpenZeppelinVersion: hashFiles[hash][4],
           contract: hashFiles[hash][0],
-          function: hashFiles[hash][3],
+          name: hashFiles[hash][3],
+          type: node[3],
         });
       }
       else {
@@ -56,7 +62,9 @@ router.post('/upload-code', function(req, res, next) {
         needToBeManuallyAudited.push(node[2]);
       }
     })
-  res.json( { matches, matchingLines, totalLines: formattedCode.split('\n').length, needToBeManuallyAudited });
+  const estimatedPrice = `\$${notMatchingLines * PRICE_PER_LINE}`;
+  res.json( { matches, matchingLines, totalLines: notMatchingLines + matchingLines, estimatedPrice,
+    needToBeManuallyAudited });
 });
 
 
@@ -115,8 +123,9 @@ router.get('/get-code', async function (req, res, next) {
       const node_list = [];
       parsing_result.forEach(contract => {
         contract.subNodes.forEach(subNode => {
-          if (subNode.type === 'FunctionDefinition') {
-            node_list.push([subNode.loc.start.line - 1, subNode.loc.end.line - 1, subNode.name]);
+          if ( ['FunctionDefinition', 'ModifierDefinition', 'StructDefinition', 'StateVariableDeclaration'
+      ].includes(subNode.type) ) {
+            node_list.push([subNode.loc.start.line - 1, subNode.loc.end.line - 1, subNode.name, subNode.type]);
           }
         })
       });
