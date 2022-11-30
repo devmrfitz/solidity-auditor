@@ -1,4 +1,7 @@
 const express = require('express');
+const fs = require("fs");
+const parser = require("@solidity-parser/parser");
+const Git = require("nodegit");
 const router = express.Router();
 
 const PRICE_PER_LINE = 12;
@@ -67,24 +70,7 @@ router.post('/upload-code', function(req, res, next) {
     needToBeManuallyAudited });
 });
 
-
-
-router.get('/get-code', async function (req, res, next) {
-  const fs = require('fs');
-  const hashFiles = {};
-
-  fs.rmSync("openzeppelin-contracts", {recursive: true, force: true})
-
-  // Clone the OpenZeppelin repo
-  const Git = require("nodegit");
-  const repo = await Git.Clone("https://github.com/OpenZeppelin/openzeppelin-contracts.git", "openzeppelin-contracts")
-
-  for (const releaseTag of ["v3.0.0", "v3.1.0", "v3.2.0", "v3.3", "v3.4", "v4.0", "v4.1", "v4.2",  "v4.3", "v4.4", "v4.5", "v4.6", "v4.7", "v4.8"]) {
-    const branchName = `release-${releaseTag}`;
-
-    await repo.checkoutRef(await repo.getBranch(`refs/remotes/origin/${branchName}`), {});
-
-    const fileDir = __dirname + '/../openzeppelin-contracts/contracts';
+function scan_folder(fileDir, fileContext, hashFiles) {
 
     function getAllFiles(dir, allFilesList = []) {
       const files = fs.readdirSync(dir);
@@ -105,7 +91,7 @@ router.get('/get-code', async function (req, res, next) {
 
     let i = 0;
     fileEndsWith.forEach(file => {
-      console.log(releaseTag, i, "/", fileEndsWith.length);
+      console.log(fileContext, i, "/", fileEndsWith.length);
       i = i + 1;
       const code = fs.readFileSync(file, 'utf8');
 
@@ -134,11 +120,46 @@ router.get('/get-code', async function (req, res, next) {
         const start = node[0];
         const end = node[1];
         const hash = require('crypto').createHash('sha256').update(formattedCode.split('\n').slice(start, end + 1).join('\n')).digest('hex');
-        hashFiles[hash] = [file.split("openzeppelin-contracts/")[1], start, end, node[2], releaseTag];
+        hashFiles[hash] = [file.split("contracts-source/")[1], start, end, node[2], fileContext];
       })
-    })}
+    })
+}
+
+router.get('/get-code', async function (req, res, next) {
+  const fs = require('fs');
+  const hashFiles = {};
+
+  fs.rmSync("contracts-source", {recursive: true, force: true})
+
+  // Clone the OpenZeppelin repo
+  const Git = require("nodegit");
+  let repo = await Git.Clone("https://github.com/OpenZeppelin/openzeppelin-contracts.git", "contracts-source/openzeppelin-contracts")
+
+  for (const releaseTag of ["v3.0.0", "v3.1.0", "v3.2.0", "v3.3", "v3.4", "v4.0", "v4.1", "v4.2",  "v4.3", "v4.4",
+    "v4.5", "v4.6", "v4.7", "v4.8"]) {
+    const branchName = `release-${releaseTag}`;
+
+    await repo.checkoutRef(await repo.getBranch(`refs/remotes/origin/${branchName}`), {});
+
+    const fileDir = __dirname + '/../contracts-source/openzeppelin-contracts/contracts';
+
+    scan_folder(fileDir, `OpenZepplin-${releaseTag}`, hashFiles)
+  }
+
+  await Git.Clone("https://github.com/Uniswap/v2-core.git", "contracts-source/uniswap-v2-core")
+
+  scan_folder(__dirname + '/../contracts-source/uniswap-v2-core/contracts', "Uniswap-v2-core", hashFiles)
+
+  await Git.Clone("https://github.com/Uniswap/v3-core.git", "contracts-source/uniswap-v3-core")
+
+  scan_folder(__dirname + '/../contracts-source/uniswap-v3-core/contracts', "Uniswap-v3-core", hashFiles)
+
+  await Git.Clone("https://github.com/pancakeswap/pancake-smart-contracts.git", "contracts-source/pancake-smart-contracts")
+
+  scan_folder(__dirname + '/../contracts-source/pancake-smart-contracts/projects', "PancakeSwap", hashFiles);
 
 
+  // Write to file
   const filePath = __dirname + '/../hashes_cache.json';
 
 
