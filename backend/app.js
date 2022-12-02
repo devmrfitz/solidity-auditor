@@ -9,7 +9,14 @@ var usersRouter = require('./routes/users');
 const cors = require('cors');
 
 var app = express();
-app.use(bodyParser.text());
+var multer = require('multer');
+var forms = multer();
+
+// apply them
+
+app.use(bodyParser.json());
+app.use(forms.array());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

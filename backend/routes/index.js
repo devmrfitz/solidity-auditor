@@ -4,13 +4,13 @@ const parser = require("@solidity-parser/parser");
 const Git = require("nodegit");
 const router = express.Router();
 
-const PRICE_PER_LINE = 12;
 
 router.post('/upload-code', function(req, res, next) {
-  const code = req.body;
   const prettier = require("prettier");
   const fs = require('fs');
+  const {SolidityMetricsContainer} = require('solidity-metrics');
 
+  const {code, price} = req.body;
   const hashFiles = JSON.parse(fs.readFileSync(__dirname + '/../hashes_cache.json', 'utf-8'));
   const currentHashes = {};
 
@@ -29,6 +29,24 @@ router.post('/upload-code', function(req, res, next) {
       .split(/\r?\n/)
     .map(row => row.trim().split(/\s+/).join(' '))
     .join('\n');
+
+  fs.writeFileSync(__dirname + '/../tmp/tmp.sol', code);
+
+  const metrics = new SolidityMetricsContainer("metricsContainerName", {
+    basePath:"",
+    inputFileGlobExclusions:undefined,
+    inputFileGlob: undefined,
+    inputFileGlobLimit: undefined,
+    debug:false,
+    repoInfo: {
+        branch: undefined,
+        commit: undefined,
+        remote: undefined
+    }
+})
+
+  metrics.analyze("tmp/tmp.sol");
+
   const parser = require('@solidity-parser/parser');
 
   const parsing_result = parser.parse(formattedCode, {
@@ -65,9 +83,9 @@ router.post('/upload-code', function(req, res, next) {
         needToBeManuallyAudited.push(node[2]);
       }
     })
-  const estimatedPrice = `\$${notMatchingLines * PRICE_PER_LINE}`;
+  const estimatedPrice = `\$${notMatchingLines * price}`;
   res.json( { matches, matchingLines, totalLines: notMatchingLines + matchingLines, estimatedPrice,
-    needToBeManuallyAudited });
+    needToBeManuallyAudited, metrics: metrics.totals() });
 });
 
 function scan_folder(fileDir, fileContext, hashFiles) {

@@ -4,6 +4,7 @@ function App() {
   const [code, setCode] = useState('');
   const [blockExplorerUrl, setBlockExplorerUrl] = useState('');
   const [resp, setResp] = useState('');
+  const [price, setPrice] = useState("12");
   const fileUploadRef = useRef(null);
   console.log(resp);
   return (
@@ -80,22 +81,25 @@ function App() {
           </div>
         </div>
       <div className="col-span-8">
+        <input onChange={e => setPrice(e.target.value)} value={price} type="number" className="w-full my-3"
+               placeholder="Enter price per line in USD"/>
         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 onClick={() => {
+                  const bodyFormData = new FormData();
+                  bodyFormData.append('code', code);
+                  bodyFormData.append('price', price);
                   fetch(`${process.env.REACT_APP_BACKEND_URL}/upload-code`, {
                     method: 'POST',
-                    headers: {
-                      'Content-Type': 'text/plain'
-                    },
-                    body: code
+                    body: bodyFormData
                   }).then((response) => response.json())
                       .then((data) => setResp(data));
                 }}
         >Submit for audit</button>
       </div>
-      <div className={"col-span-12"}>
+      {resp!==''?<div className={"col-span-12"}>
+        Note: Metrics are for raw source contract, while other calculations are done post processing.
         {<pre>{JSON.stringify(resp, null, 2)}</pre>}
-      </div>
+      </div>:null}
     </div>
   );
 }
